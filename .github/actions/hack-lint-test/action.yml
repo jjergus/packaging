@@ -1,0 +1,28 @@
+name: 'HackLintTest'
+description: 'Runs the Hack typechecker, linter (HHAST) and tests (HackTest)'
+inputs:
+  hhvm:  # id of input
+    description: 'HHVM version (latest/nightly/#.##)'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Install Composer
+      run: ${{github.action_path}}/install-composer.sh --install-dir=${{runner.temp}}
+    - name: Install HHVM
+      run: ${{github.action_path}}/install-hhvm.sh ${{inputs.hhvm}}
+    - name: Inspect HHVM and Hack versions
+      run: |
+        hhvm --version
+        hh_client --version
+#    - name: Create branch for version alias
+#      run: git checkout -b CI_current_pull_request
+    - name: Install project dependencies
+      run: php ${{runner.temp}}/composer.phar install
+    - name: Typecheck
+      run: hh_client
+    - name: Lint
+      run: |
+        [ ! -e vendor/bin/hhast-lint ] || vendor/bin/hhast-lint
+    - name: Run tests
+      run: vendor/bin/hacktest tests/
